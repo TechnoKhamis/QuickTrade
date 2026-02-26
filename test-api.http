@@ -1,0 +1,112 @@
+### CashWise API Testing
+### Use this with VS Code REST Client extension or Postman
+
+@baseUrl = http://localhost:8080/api
+@token = your_token_here
+
+### 1. Register User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Salman Dowaik",
+  "email": "salman@example.com",
+  "password": "password123"
+}
+
+### 2. Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "salman@example.com",
+  "password": "password123"
+}
+
+### 3. Get All Categories
+GET {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+
+### 4. Get Income Categories
+GET {{baseUrl}}/categories/type/INCOME
+Authorization: Bearer {{token}}
+
+### 5. Get Expense Categories
+GET {{baseUrl}}/categories/type/EXPENSE
+Authorization: Bearer {{token}}
+
+### 6. Create Income Transaction
+POST {{baseUrl}}/transactions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 5000.000,
+  "type": "INCOME",
+  "categoryId": 1,
+  "description": "Monthly salary",
+  "transactionDate": "2026-02-01",
+  "isManual": true
+}
+
+### 7. Create Expense Transaction
+POST {{baseUrl}}/transactions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 45.500,
+  "type": "EXPENSE",
+  "categoryId": 5,
+  "description": "Lunch at Nando's with team",
+  "transactionDate": "2026-02-26",
+  "isManual": true
+}
+
+### 8. Create More Expenses for Testing
+POST {{baseUrl}}/transactions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 120.000,
+  "type": "EXPENSE",
+  "categoryId": 6,
+  "description": "Taxi to work",
+  "transactionDate": "2026-02-25",
+  "isManual": true
+}
+
+### 9. Get All Transactions
+GET {{baseUrl}}/transactions
+Authorization: Bearer {{token}}
+
+### 10. Get Transactions by Date Range
+GET {{baseUrl}}/transactions/range?startDate=2026-02-01&endDate=2026-02-28
+Authorization: Bearer {{token}}
+
+### 11. Get Dashboard Stats
+GET {{baseUrl}}/dashboard/stats
+Authorization: Bearer {{token}}
+
+### 12. Get Dashboard Stats for Specific Period
+GET {{baseUrl}}/dashboard/stats?startDate=2026-02-01&endDate=2026-02-28
+Authorization: Bearer {{token}}
+
+### 13. Update Transaction (replace {id} with actual transaction ID)
+PUT {{baseUrl}}/transactions/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 50.000,
+  "type": "EXPENSE",
+  "categoryId": 5,
+  "description": "Updated: Lunch at Nando's",
+  "transactionDate": "2026-02-26",
+  "isManual": true
+}
+
+### 14. Delete Transaction (replace {id} with actual transaction ID)
+DELETE {{baseUrl}}/transactions/1
+Authorization: Bearer {{token}}

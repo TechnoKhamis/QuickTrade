@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CashWise — Smart Finance Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#080C10;--surface:#0F1419;--surface2:#161D26;--surface3:#1C2533;--border:#1E2D3D;--border2:#253344;
+  --accent:#00E5A0;--accent-d:#00b87e;--accent-glow:rgba(0,229,160,0.1);--accent-glow2:rgba(0,229,160,0.06);
+  --income:#00E5A0;--expense:#FF4D6A;--warn:#FFB547;--info:#4D9FFF;--purple:#A78BFA;
+  --text:#E8F1F8;--muted:#5B7A94;--muted2:#2D4459;
+  --r:10px;--r-lg:14px;--r-xl:18px;
+}
+body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ── NOISE OVERLAY ── */
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.4;}
+
+/* ── AUTH ── */
+#auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden;}
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(30,45,61,0.4) 1px,transparent 1px),linear-gradient(90deg,rgba(30,45,61,0.4) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;}
+#auth-screen::before{content:'';position:absolute;width:900px;height:900px;background:radial-gradient(circle,rgba(0,229,160,0.04) 0%,transparent 60%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+#auth-screen::after{content:'';position:absolute;width:400px;height:400px;background:radial-gradient(circle,rgba(77,159,255,0.04) 0%,transparent 60%);top:20%;right:15%;pointer-events:none;}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:48px 40px;width:100%;max-width:400px;position:relative;z-index:1;animation:slideUp .5s ease;}
+.auth-card::before{content:'';position:absolute;top:0;left:24px;right:24px;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
+.auth-logo{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;text-align:center;margin-bottom:6px;letter-spacing:-1.5px;}
+.auth-logo span{color:var(--accent);}
+.auth-sub{text-align:center;color:var(--muted);font-size:11px;margin-bottom:32px;letter-spacing:.5px;}
+.auth-tabs{display:flex;background:var(--bg);border-radius:var(--r);padding:4px;margin-bottom:24px;border:1px solid var(--border);}
+.auth-tab{flex:1;text-align:center;padding:8px;border-radius:7px;font-size:11px;cursor:pointer;color:var(--muted);transition:all .2s;letter-spacing:.5px;}
+.auth-tab.active{background:var(--accent);color:#000;font-weight:700;}
+
+/* ── FORMS ── */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;display:block;}
+.form-input{width:100%;height:44px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:0 14px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;transition:border-color .2s,box-shadow .2s;appearance:none;}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow2);}
+textarea.form-input{height:80px;padding:12px 14px;resize:none;}
+.btn-primary{width:100%;height:44px;background:var(--accent);color:#000;border:none;border-radius:var(--r);font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;letter-spacing:.3px;}
+.btn-primary:hover{background:var(--accent-d);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,229,160,0.25);}
+.btn-primary:active{transform:scale(.98);}
+.btn-sm{height:36px;padding:0 16px;background:var(--accent);color:#000;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;letter-spacing:.3px;}
+.btn-sm:hover{background:var(--accent-d);box-shadow:0 4px 16px rgba(0,229,160,0.2);}
+.btn-outline{height:36px;padding:0 16px;background:transparent;color:var(--accent);border:1px solid rgba(0,229,160,.3);border-radius:8px;font-family:'Syne',sans-serif;font-weight:600;font-size:11px;cursor:pointer;transition:all .2s;}
+.btn-outline:hover{background:var(--accent-glow);border-color:rgba(0,229,160,.6);}
+.btn-danger{height:36px;padding:0 14px;background:transparent;color:var(--expense);border:1px solid rgba(255,77,106,.3);border-radius:8px;font-size:11px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s;}
+.btn-danger:hover{background:rgba(255,77,106,.08);}
+.btn-ghost{height:36px;padding:0 14px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:8px;font-size:11px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s;}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2);}
+
+/* ── APP LAYOUT ── */
+#app{display:none;grid-template-columns:240px 1fr;min-height:100vh;}
+#app.visible{display:grid;}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:24px 14px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-1.5px;padding:0 10px;margin-bottom:28px;display:flex;align-items:center;gap:8px;}
+.logo span{color:var(--accent);}
+.logo-dot{width:7px;height:7px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent);}
+.nav-section{font-size:9px;text-transform:uppercase;letter-spacing:2.5px;color:var(--muted2);padding:0 10px;margin:12px 0 4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);cursor:pointer;font-size:11px;color:var(--muted);transition:all .18s;border:1px solid transparent;user-select:none;letter-spacing:.3px;}
+.nav-item:hover{color:var(--text);background:var(--surface2);}
+.nav-item.active{color:var(--accent);background:var(--accent-glow);border-color:rgba(0,229,160,.15);}
+.nav-icon{font-size:13px;width:18px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--expense);color:#fff;border-radius:20px;font-size:9px;padding:2px 7px;font-weight:700;}
+.sidebar-divider{height:1px;background:var(--border);margin:8px 4px;}
+.sidebar-footer{margin-top:auto;padding:14px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);}
+.user-avatar{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--info));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#000;flex-shrink:0;}
+.user-info{display:flex;align-items:center;gap:10px;}
+.user-name{font-size:11px;font-weight:600;}
+.user-role{font-size:10px;color:var(--muted);margin-top:1px;}
+.stripe-badge-nav{display:flex;align-items:center;gap:5px;margin-top:8px;padding:5px 8px;background:rgba(99,91,255,.08);border:1px solid rgba(99,91,255,.2);border-radius:6px;font-size:9px;color:#a78bfa;letter-spacing:.5px;}
+
+/* ── MAIN ── */
+main{padding:36px 40px;overflow-y:auto;background:var(--bg);}
+.page{display:none;animation:fadeIn .3s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;}
+.page-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.8px;}
+.page-sub{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:.3px;}
+
+/* ── DASHBOARD STATS ── */
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;}
+.stat-card:hover{transform:translateY(-2px);border-color:var(--border2);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat-card.income-card::before{background:linear-gradient(90deg,var(--income),transparent);}
+.stat-card.expense-card::before{background:linear-gradient(90deg,var(--expense),transparent);}
+.stat-card.savings-card::before{background:linear-gradient(90deg,var(--info),transparent);}
+.stat-card.tx-card::before{background:linear-gradient(90deg,var(--purple),transparent);}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;}
+.stat-value{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.5px;}
+.stat-card.income-card .stat-value{color:var(--income);}
+.stat-card.expense-card .stat-value{color:var(--expense);}
+.stat-card.savings-card .stat-value{color:var(--info);}
+.stat-card.tx-card .stat-value{color:var(--purple);}
+.stat-change{font-size:10px;color:var(--muted);margin-top:4px;}
+.stat-icon{position:absolute;top:18px;right:18px;font-size:18px;opacity:.15;}
+
+/* ── DASHBOARD HERO ── */
+.dash-hero{background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);border:1px solid var(--border);border-radius:var(--r-xl);padding:28px 32px;margin-bottom:24px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;}
+.dash-hero::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(0,229,160,0.06) 0%,transparent 70%);}
+.dash-hero::after{content:'';position:absolute;bottom:-40px;left:40%;width:150px;height:150px;background:radial-gradient(circle,rgba(77,159,255,0.04) 0%,transparent 70%);}
+.hero-left{}
+.hero-greeting{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;}
+.hero-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:-1px;margin-bottom:4px;}
+.hero-title span{color:var(--accent);}
+.hero-sub{font-size:11px;color:var(--muted);}
+.hero-right{display:flex;gap:10px;flex-shrink:0;position:relative;z-index:1;}
+.stripe-pill{display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);border-radius:20px;font-size:10px;color:var(--accent);letter-spacing:.5px;}
+.stripe-dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;box-shadow:0 0 6px var(--accent);}
+
+/* ── CHARTS ── */
+.charts-row{display:grid;grid-template-columns:1fr 1.6fr;gap:14px;margin-bottom:24px;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px;}
+.chart-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:18px;letter-spacing:-.2px;}
+.chart-subtitle{font-size:10px;color:var(--muted);margin-top:-14px;margin-bottom:16px;}
+
+/* ── TABLE ── */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;}
+.table-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);}
+.table-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+table{width:100%;border-collapse:collapse;}
+thead th{text-align:left;padding:10px 22px;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);background:var(--surface2);border-bottom:1px solid var(--border);}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--surface2);}
+tbody td{padding:13px 22px;font-size:11px;}
+.cat-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:10px;background:var(--surface2);border:1px solid var(--border2);}
+.tx-note{color:var(--muted);font-size:11px;}
+.tx-amount{font-weight:600;font-size:12px;}
+.tx-amount.income{color:var(--income);}
+.tx-amount.expense{color:var(--expense);}
+.type-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;}
+.type-badge.income{background:rgba(0,229,160,.08);color:var(--income);border:1px solid rgba(0,229,160,.2);}
+.type-badge.expense{background:rgba(255,77,106,.08);color:var(--expense);border:1px solid rgba(255,77,106,.2);}
+.type-badge.lent{background:rgba(255,181,71,.08);color:var(--warn);}
+.type-badge.borrowed{background:rgba(77,159,255,.08);color:var(--info);}
+.method-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:600;}
+.method-badge.stripe{background:rgba(99,91,255,.1);color:#a78bfa;border:1px solid rgba(99,91,255,.2);}
+.method-badge.manual{background:rgba(91,122,148,.1);color:var(--muted);border:1px solid rgba(91,122,148,.2);}
+
+/* ── DRAWER ── */
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:100;}
+.drawer-overlay.open{display:block;animation:fadeIn .2s ease;}
+.drawer{position:fixed;top:0;right:-500px;width:460px;height:100vh;background:var(--surface);border-left:1px solid var(--border);padding:32px;z-index:101;transition:right .32s cubic-bezier(.4,0,.2,1);overflow-y:auto;}
+.drawer.open{right:0;}
+.drawer-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:6px;letter-spacing:-.5px;}
+.drawer-subtitle{font-size:11px;color:var(--muted);margin-bottom:24px;}
+.drawer-close{position:absolute;top:26px;right:26px;width:32px;height:32px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);transition:all .2s;}
+.drawer-close:hover{color:var(--text);border-color:var(--border2);}
+.type-toggle{display:flex;background:var(--bg);border-radius:var(--r);padding:4px;margin-bottom:20px;border:1px solid var(--border);}
+.type-btn{flex:1;text-align:center;padding:9px;border-radius:7px;font-size:11px;cursor:pointer;color:var(--muted);transition:all .2s;font-family:'JetBrains Mono',monospace;letter-spacing:.3px;}
+.type-btn.income.active{background:rgba(0,229,160,.15);color:var(--income);border:1px solid rgba(0,229,160,.25);}
+.type-btn.expense.active{background:rgba(255,77,106,.15);color:var(--expense);border:1px solid rgba(255,77,106,.25);}
+
+/* ── PAYMENT MODE TOGGLE ── */
+.mode-toggle{display:flex;background:var(--bg);border-radius:var(--r);padding:4px;margin-bottom:20px;border:1px solid var(--border);}
+.mode-btn{flex:1;text-align:center;padding:10px 8px;border-radius:7px;font-size:11px;cursor:pointer;color:var(--muted);transition:all .2s;font-family:'JetBrains Mono',monospace;}
+.mode-btn.active.manual-mode{background:var(--surface2);color:var(--text);border:1px solid var(--border2);}
+.mode-btn.active.stripe-mode{background:rgba(99,91,255,.12);color:#a78bfa;border:1px solid rgba(99,91,255,.25);}
+.mode-label{font-size:9px;display:block;margin-top:2px;opacity:.7;text-transform:uppercase;letter-spacing:1px;}
+
+.mode-info{border-radius:var(--r);padding:12px 14px;margin-bottom:18px;font-size:11px;line-height:1.6;}
+.mode-info.manual-info{background:rgba(91,122,148,.06);border:1px solid rgba(91,122,148,.15);color:var(--muted);}
+.mode-info.stripe-info{background:rgba(99,91,255,.06);border:1px solid rgba(99,91,255,.18);color:#c4b5fd;}
+
+.stripe-fields{border:1px solid rgba(99,91,255,.2);border-radius:var(--r);padding:16px;background:rgba(99,91,255,.04);margin-bottom:16px;}
+.stripe-fields-title{font-size:10px;color:#a78bfa;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.stripe-field-row{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.stripe-field-row:last-child{margin-bottom:0;}
+.stripe-field-label{font-size:10px;color:var(--muted);}
+.stripe-field-val{font-size:11px;color:var(--text);font-family:'JetBrains Mono',monospace;letter-spacing:.5px;}
+.stripe-powered{text-align:center;font-size:10px;color:var(--muted2);margin-top:10px;display:flex;align-items:center;justify-content:center;gap:5px;}
+
+.drawer-divider{height:1px;background:var(--border);margin:20px 0;}
+
+/* ── CATEGORIES PAGE ── */
+.categories-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;}
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;display:flex;align-items:center;gap:12px;transition:all .2s;cursor:pointer;}
+.cat-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.cat-emoji{font-size:24px;width:44px;height:44px;background:var(--surface2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border);}
+.cat-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;}
+.cat-count{font-size:10px;color:var(--muted);margin-top:2px;}
+.cat-total{font-size:12px;font-weight:600;color:var(--expense);margin-top:3px;}
+.cat-total.income{color:var(--income);}
+.add-cat-card{background:transparent;border:2px dashed var(--border);border-radius:var(--r-lg);padding:18px;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;color:var(--muted);font-size:12px;transition:all .2s;}
+.add-cat-card:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── FRIEND LOANS ── */
+.friends-layout{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.friend-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;display:flex;align-items:center;gap:12px;transition:all .2s;}
+.friend-card:hover{border-color:var(--border2);}
+.friend-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;flex-shrink:0;}
+.friend-avatar.lent{background:rgba(255,181,71,.1);color:var(--warn);border:1px solid rgba(255,181,71,.2);}
+.friend-avatar.borrowed{background:rgba(77,159,255,.1);color:var(--info);border:1px solid rgba(77,159,255,.2);}
+.friend-info{flex:1;}
+.friend-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;}
+.friend-note{font-size:10px;color:var(--muted);margin-top:2px;}
+.friend-date{font-size:9px;color:var(--muted2);margin-top:3px;}
+.friend-amount{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;}
+.friend-amount.lent{color:var(--warn);}
+.friend-amount.borrowed{color:var(--info);}
+.status-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.5px;}
+.status-tag.pending{background:rgba(255,181,71,.08);color:var(--warn);}
+.status-tag.settled{background:rgba(0,229,160,.08);color:var(--accent);}
+.fl-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+
+/* ── BUDGET PAGE ── */
+.budget-list{display:flex;flex-direction:column;gap:10px;}
+.budget-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;}
+.budget-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.budget-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;}
+.budget-amounts{font-size:11px;color:var(--muted);}
+.budget-amounts strong{color:var(--text);}
+.progress-bar{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;transition:width .6s ease;}
+.progress-fill.ok{background:var(--accent);}
+.progress-fill.warn{background:var(--warn);}
+.progress-fill.over{background:var(--expense);}
+
+/* ── ANALYTICS ── */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.stat-row:last-child{border-bottom:none;}
+.stat-row-label{font-size:11px;color:var(--muted);}
+.stat-row-value{font-size:12px;font-weight:600;}
+
+/* ── LOAN PAGE ── */
+.loan-layout{display:grid;grid-template-columns:360px 1fr;gap:20px;}
+.loan-form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px;height:fit-content;}
+.loan-summary{background:var(--surface2);border:1px solid rgba(0,229,160,.25);border-radius:var(--r-lg);padding:22px;margin-top:14px;display:none;}
+.loan-summary.visible{display:block;}
+.loan-big{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--accent);letter-spacing:-1px;margin-bottom:4px;}
+.loan-big-label{font-size:10px;color:var(--muted);margin-bottom:16px;}
+.loan-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.loan-meta-item{background:var(--surface);border-radius:8px;padding:10px;border:1px solid var(--border);}
+.loan-meta-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
+.loan-meta-value{font-size:13px;font-weight:600;}
+.amort-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;max-height:580px;overflow-y:auto;}
+.amort-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 40px;color:var(--muted);text-align:center;}
+.amort-empty-icon{font-size:40px;margin-bottom:14px;opacity:.3;}
+.paid-row td{opacity:.35;}
+.pay-btn{padding:3px 10px;background:transparent;border:1px solid rgba(0,229,160,.35);border-radius:6px;color:var(--accent);font-size:9px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s;}
+.pay-btn:hover{background:var(--accent-glow);}
+.paid-badge{padding:3px 9px;background:rgba(0,229,160,.08);border-radius:6px;color:var(--accent);font-size:9px;border:1px solid rgba(0,229,160,.2);}
+
+/* ── CARDS (stat cards on other pages) ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;}
+.card:hover{transform:translateY(-2px);border-color:var(--border2);}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.card.balance::before{background:var(--accent);}
+.card.income-card::before{background:var(--income);}
+.card.expense-card::before{background:var(--expense);}
+.card.warn-card::before{background:var(--warn);}
+.card.info-card::before{background:var(--info);}
+.card-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;}
+.card-value{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;letter-spacing:-.5px;}
+.card.income-card .card-value{color:var(--income);}
+.card.expense-card .card-value{color:var(--expense);}
+.card.warn-card .card-value{color:var(--warn);}
+.card.info-card .card-value{color:var(--info);}
+.card-change{font-size:10px;color:var(--muted);margin-top:4px;}
+.card-icon{position:absolute;top:18px;right:18px;font-size:18px;opacity:.15;}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;animation:fadeIn .2s ease;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:32px;width:100%;max-width:420px;position:relative;animation:slideUp .3s ease;}
+.modal::before{content:'';position:absolute;top:0;left:20px;right:20px;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
+.modal-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:4px;}
+.modal-sub{font-size:11px;color:var(--muted);margin-bottom:18px;}
+.modal-amount{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--accent);margin-bottom:20px;letter-spacing:-1px;}
+.modal-close{position:absolute;top:18px;right:18px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--muted);transition:all .2s;}
+.modal-close:hover{color:var(--text);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;right:28px;background:var(--surface);border:1px solid rgba(0,229,160,.4);border-radius:var(--r);padding:12px 18px;font-size:11px;z-index:300;display:none;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.toast.show{display:flex;align-items:center;gap:10px;animation:slideUp .3s ease;}
+.toast-icon{color:var(--accent);font-size:14px;}
+.toast.error-toast{border-color:rgba(255,77,106,.4);}
+.toast.error-toast .toast-icon{color:var(--expense);}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ── STRIPE STATUS CHIP ── */
+.stripe-status{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(99,91,255,.1);color:#a78bfa;border:1px solid rgba(99,91,255,.2);letter-spacing:.5px;}
+
+/* ── SETTINGS ── */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:720px;}
+
+/* ── QUICK ACTIONS ── */
+.quick-actions{display:flex;gap:10px;margin-bottom:24px;}
+.qa-btn{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);font-size:11px;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace;}
+.qa-btn:hover{color:var(--text);border-color:var(--border2);background:var(--surface2);}
+.qa-btn.primary{background:var(--accent);color:#000;border-color:var(--accent);font-family:'Syne',sans-serif;font-weight:700;}
+.qa-btn.primary:hover{background:var(--accent-d);}
+.qa-btn.stripe-qa{background:rgba(99,91,255,.08);color:#a78bfa;border-color:rgba(99,91,255,.25);}
+.qa-btn.stripe-qa:hover{background:rgba(99,91,255,.15);}
+</style>
+</head>
+<body>
+
+<!-- ════════ AUTH ════════ -->
+<div id="auth-screen">
+  <div class="grid-bg"></div>
+  <div class="auth-card">
+    <div class="auth-logo">Cash<span>Wise</span></div>
+    <div class="auth-sub">TRACK · CATEGORIZE · ANALYSE</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">Sign In</div>
+      <div class="auth-tab" onclick="switchTab('register')">Register</div>
+    </div>
+    <div id="login-form">
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" placeholder="salman@example.com"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" placeholder="••••••••"></div>
+      <button class="btn-primary" onclick="enterApp()">Sign In →</button>
+    </div>
+    <div id="register-form" style="display:none">
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" type="text" placeholder="Salman Khamis"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" placeholder="salman@example.com"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" placeholder="••••••••"></div>
+      <button class="btn-primary" onclick="enterApp()">Create Account →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ APP ════════ -->
+<div id="app">
+
+  <!-- ── SIDEBAR ── -->
+  <nav class="sidebar">
+    <div class="logo"><div class="logo-dot"></div> Cash<span>Wise</span></div>
+
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="goTo('dashboard',this)"><span class="nav-icon">▦</span> Dashboard</div>
+    <div class="nav-item" onclick="goTo('analytics',this)"><span class="nav-icon">📊</span> Analytics</div>
+
+    <div class="nav-section">Money</div>
+    <div class="nav-item" onclick="goTo('transactions',this)"><span class="nav-icon">↕</span> Transactions</div>
+    <div class="nav-item" onclick="goTo('categories',this)"><span class="nav-icon">🏷</span> Categories</div>
+    <div class="nav-item" onclick="goTo('budget',this)"><span class="nav-icon">🎯</span> Budget Goals</div>
+
+    <div class="nav-section">Finance</div>
+    <div class="nav-item" onclick="goTo('loans',this)"><span class="nav-icon">🏦</span> Loan Planner</div>
+    <div class="nav-item" onclick="goTo('friends',this)">
+      <span class="nav-icon">🤝</span> Friend Loans
+      <span class="nav-badge" id="fl-badge">2</span>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="nav-section">Account</div>
+    <div class="nav-item" onclick="goTo('settings',this)"><span class="nav-icon">⚙</span> Settings</div>
+    <div class="nav-item" onclick="logout()"><span class="nav-icon">⤴</span> Sign Out</div>
+
+    <div class="sidebar-footer" style="margin-top:16px">
+      <div class="user-info">
+        <div class="user-avatar">SK</div>
+        <div>
+          <div class="user-name">Salman Khamis</div>
+          <div class="user-role">Personal · BHD</div>
+        </div>
+      </div>
+      <div class="stripe-badge-nav">
+        <div style="width:5px;height:5px;background:#a78bfa;border-radius:50%;animation:pulse 2s infinite"></div>
+        Stripe Connected · Test Mode
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <main>
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+
+      <!-- Hero -->
+      <div class="dash-hero">
+        <div class="hero-left">
+          <div class="hero-greeting">February 2026 · All accounts</div>
+          <div class="hero-title">Good morning, <span>Salman</span> 👋</div>
+          <div class="hero-sub">You've tracked 8 transactions this month · Savings rate 38.4%</div>
+        </div>
+        <div class="hero-right">
+          <div class="stripe-pill"><div class="stripe-dot"></div> Stripe · Test Mode</div>
+          <button class="btn-sm" onclick="openDrawer()">+ Add Transaction</button>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-row">
+        <div class="stat-card income-card">
+          <div class="stat-icon">📈</div>
+          <div class="stat-label">Total Income</div>
+          <div class="stat-value">BD 3,800</div>
+          <div class="stat-change">Salary + Freelance</div>
+        </div>
+        <div class="stat-card expense-card">
+          <div class="stat-icon">📉</div>
+          <div class="stat-label">Total Expenses</div>
+          <div class="stat-value">BD 1,459<span style="font-size:13px;font-weight:400;color:var(--muted)">.500</span></div>
+          <div class="stat-change">↓ −5.2% vs last month</div>
+        </div>
+        <div class="stat-card savings-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-label">Net Savings</div>
+          <div class="stat-value">BD 2,340</div>
+          <div class="stat-change">↑ +12.4% from last month</div>
+        </div>
+        <div class="stat-card tx-card">
+          <div class="stat-icon">🔄</div>
+          <div class="stat-label">Transactions</div>
+          <div class="stat-value" id="tx-count-dash">8</div>
+          <div class="stat-change">This month</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <button class="qa-btn primary" onclick="openDrawer()">+ Add Transaction</button>
+        <button class="qa-btn stripe-qa" onclick="openStripeDrawer()">⚡ Pay via Stripe</button>
+        <button class="qa-btn" onclick="goTo('budget',document.querySelector('[onclick*=budget]'))">🎯 View Budgets</button>
+        <button class="qa-btn" onclick="goTo('analytics',document.querySelector('[onclick*=analytics]'))">📊 Analytics</button>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">Spending by Category</div>
+          <div style="height:210px"><canvas id="donutChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Income vs Expenses — Last 6 Months</div>
+          <div style="height:210px"><canvas id="barChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="table-card">
+        <div class="table-head">
+          <div>
+            <div class="table-title">Recent Transactions</div>
+          </div>
+          <button class="btn-outline" onclick="goTo('transactions',document.querySelectorAll('.nav-item')[2])">View All →</button>
+        </div>
+        <table>
+          <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Method</th><th>Type</th><th style="text-align:right">Amount</th></tr></thead>
+          <tbody id="recent-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div id="page-analytics" class="page">
+      <div class="page-header"><div><div class="page-title">Analytics</div><div class="page-sub">Deep insights into your spending habits</div></div></div>
+      <div class="analytics-grid">
+        <div class="chart-card"><div class="chart-title">Monthly Net Trend</div><div style="height:220px"><canvas id="lineChart"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">Top Spending Categories</div><div style="height:220px"><canvas id="hbarChart"></canvas></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+        <div class="chart-card">
+          <div class="chart-title">Key Stats</div>
+          <div class="stat-row"><span class="stat-row-label">Avg daily spend</span><span class="stat-row-value" style="color:var(--expense)">BD 5.320</span></div>
+          <div class="stat-row"><span class="stat-row-label">Biggest expense</span><span class="stat-row-value">Shopping</span></div>
+          <div class="stat-row"><span class="stat-row-label">Savings rate</span><span class="stat-row-value" style="color:var(--accent)">38.4%</span></div>
+          <div class="stat-row"><span class="stat-row-label">Transactions</span><span class="stat-row-value">8 this month</span></div>
+          <div class="stat-row"><span class="stat-row-label">Most active day</span><span class="stat-row-value">Thursday</span></div>
+          <div class="stat-row"><span class="stat-row-label">Stripe payments</span><span class="stat-row-value" style="color:#a78bfa">2 this month</span></div>
+        </div>
+        <div class="chart-card" style="grid-column:span 2">
+          <div class="chart-title">Income Sources</div>
+          <div style="height:180px"><canvas id="incomeChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div id="page-transactions" class="page">
+      <div class="page-header">
+        <div><div class="page-title">Transactions</div><div class="page-sub">All income &amp; expenses · Manual &amp; Stripe</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-outline" onclick="openStripeDrawer()">⚡ Stripe Payment</button>
+          <button class="btn-sm" onclick="openDrawer()">+ Manual Entry</button>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-head"><div class="table-title">All Transactions</div><div style="font-size:10px;color:var(--muted)" id="tx-count"></div></div>
+        <table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Method</th><th>Type</th><th style="text-align:right">Amount</th></tr></thead>
+        <tbody id="all-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div id="page-categories" class="page">
+      <div class="page-header">
+        <div><div class="page-title">Categories</div><div class="page-sub">Manage your spending categories</div></div>
+        <button class="btn-sm" onclick="openCatDrawer()">+ New Category</button>
+      </div>
+      <div class="categories-grid" id="cat-grid"></div>
+      <div class="table-card" id="cat-tx-card" style="display:none">
+        <div class="table-head">
+          <div class="table-title" id="cat-tx-title">Category Transactions</div>
+          <button class="btn-outline" onclick="document.getElementById('cat-tx-card').style.display='none'">✕ Close</button>
+        </div>
+        <table><thead><tr><th>Date</th><th>Note</th><th>Method</th><th style="text-align:right">Amount</th></tr></thead>
+        <tbody id="cat-tx-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- BUDGET -->
+    <div id="page-budget" class="page">
+      <div class="page-header">
+        <div><div class="page-title">Budget Goals</div><div class="page-sub">Monthly spending limits per category</div></div>
+        <button class="btn-sm" onclick="openBudgetDrawer()">+ Set Budget</button>
+      </div>
+      <div class="budget-list" id="budget-list"></div>
+    </div>
+
+    <!-- LOANS -->
+    <div id="page-loans" class="page">
+      <div class="page-header"><div><div class="page-title">Loan Planner</div><div class="page-sub">Calculate repayments &amp; track payments</div></div></div>
+      <div class="loan-layout">
+        <div>
+          <div class="loan-form-card">
+            <div class="chart-title" style="margin-bottom:16px">New Loan</div>
+            <div class="form-group"><label class="form-label">Loan Name</label><input class="form-input" id="loan-name" type="text" placeholder="e.g. Car Loan"></div>
+            <div class="form-group"><label class="form-label">Principal (BD)</label><input class="form-input" id="loan-principal" type="number" placeholder="5000"></div>
+            <div class="form-group"><label class="form-label">Annual Rate (%)</label><input class="form-input" id="loan-rate" type="number" step="0.1" placeholder="5.5"></div>
+            <div class="form-group"><label class="form-label">Term (Months)</label><input class="form-input" id="loan-term" type="number" placeholder="24"></div>
+            <button class="btn-primary" onclick="calculateLoan()">Calculate →</button>
+          </div>
+          <div class="loan-summary" id="loan-summary">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:10px">Monthly Payment</div>
+            <div class="loan-big" id="s-monthly"></div>
+            <div class="loan-big-label">per month for <span id="s-term"></span> months</div>
+            <div class="loan-meta">
+              <div class="loan-meta-item"><div class="loan-meta-label">Total Interest</div><div class="loan-meta-value" id="s-interest"></div></div>
+              <div class="loan-meta-item"><div class="loan-meta-label">Total Cost</div><div class="loan-meta-value" id="s-total"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="amort-card" id="amort-card">
+          <div class="amort-empty"><div class="amort-empty-icon">📋</div><div style="font-size:11px;color:var(--muted)">Enter loan details and click Calculate<br>to see your amortization schedule</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FRIEND LOANS -->
+    <div id="page-friends" class="page">
+      <div class="page-header">
+        <div><div class="page-title">Friend Loans</div><div class="page-sub">Track money lent &amp; borrowed from friends</div></div>
+        <button class="btn-sm" onclick="openFriendDrawer()">+ Add Entry</button>
+      </div>
+      <div class="fl-summary">
+        <div class="card warn-card"><div class="card-icon">→</div><div class="card-label">You Lent</div><div class="card-value" id="fl-lent-total">BD 0</div><div class="card-change" id="fl-lent-count">0 pending</div></div>
+        <div class="card info-card"><div class="card-icon">←</div><div class="card-label">You Borrowed</div><div class="card-value" id="fl-borrow-total">BD 0</div><div class="card-change" id="fl-borrow-count">0 pending</div></div>
+        <div class="card balance"><div class="card-icon">⚖</div><div class="card-label">Net Position</div><div class="card-value" id="fl-net">BD 0</div><div class="card-change">Your balance</div></div>
+      </div>
+      <div class="friends-layout" id="friends-grid"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="page-settings" class="page">
+      <div class="page-header"><div><div class="page-title">Settings</div><div class="page-sub">Customize your CashWise experience</div></div></div>
+      <div class="settings-grid">
+        <div class="chart-card">
+          <div class="chart-title" style="margin-bottom:16px">Profile</div>
+          <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" value="Salman Khamis"></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" value="salman@example.com"></div>
+          <button class="btn-sm" style="width:100%;justify-content:center">Save Changes</button>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" style="margin-bottom:16px">Preferences</div>
+          <div class="form-group"><label class="form-label">Currency</label>
+            <select class="form-input"><option>BHD — Bahraini Dinar</option><option>USD — US Dollar</option><option>SAR — Saudi Riyal</option><option>AED — UAE Dirham</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">Date Format</label>
+            <select class="form-input"><option>YYYY-MM-DD</option><option>DD/MM/YYYY</option><option>MM/DD/YYYY</option></select>
+          </div>
+          <button class="btn-sm" style="width:100%;justify-content:center">Save Preferences</button>
+        </div>
+        <div class="chart-card" style="grid-column:span 2">
+          <div class="chart-title" style="margin-bottom:4px">Stripe Integration</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:16px">Your Stripe account is connected in test mode</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">Customer ID</div>
+              <div style="font-size:11px;color:#a78bfa">cus_U2l1yIKJCR33C2</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">Payment Method</div>
+              <div style="font-size:11px;color:var(--text)">Visa •••• 4242</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">Mode</div>
+              <div style="font-size:11px;color:var(--accent)">● Test Active</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     ADD TRANSACTION DRAWER (MANUAL)
+══════════════════════════════════════════════════ -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-title">Add Transaction</div>
+  <div class="drawer-subtitle">Log a transaction manually</div>
+  <div class="drawer-close" onclick="closeDrawer()">✕</div>
+
+  <div class="type-toggle">
+    <div class="type-btn income active" id="btn-income" onclick="setType('income')">↑ Income</div>
+    <div class="type-btn expense" id="btn-expense" onclick="setType('expense')">↓ Expense</div>
+  </div>
+
+  <div class="form-group"><label class="form-label">Amount (BD)</label><input class="form-input" id="tx-amount" type="number" placeholder="0.000"></div>
+  <div class="form-group"><label class="form-label">Category</label>
+    <select class="form-input" id="tx-category">
+      <option>💰 Salary</option><option>💻 Freelance</option><option>🍔 Food</option>
+      <option>🚗 Transport</option><option>🧾 Bills</option><option>🛍️ Shopping</option>
+      <option>🏥 Health</option><option>📚 Education</option><option>📦 Other</option>
+    </select>
+  </div>
+  <div class="form-group"><label class="form-label">What was this for?</label><input class="form-input" id="tx-note" type="text" placeholder="e.g. Lunch at Nando's with team"></div>
+  <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="tx-date" type="date"></div>
+
+  <div class="mode-info manual-info">📝 <strong style="color:var(--text)">Manual Entry</strong> — Log cash payments, bank transfers, or any transaction made outside the app. No card is charged.</div>
+
+  <button class="btn-primary" onclick="addTransaction()">Save Transaction →</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     STRIPE PAYMENT DRAWER (AUTO)
+══════════════════════════════════════════════════ -->
+<div class="drawer-overlay" id="stripe-overlay" onclick="closeStripeDrawer()"></div>
+<div class="drawer" id="stripe-drawer">
+  <div class="drawer-title">Pay via Stripe</div>
+  <div class="drawer-subtitle">Charge your saved card & auto-log</div>
+  <div class="drawer-close" onclick="closeStripeDrawer()">✕</div>
+
+  <!-- Payment mode info -->
+  <div class="mode-info stripe-info">
+    ⚡ <strong style="color:#e9d5ff">Auto Mode</strong> — Your saved Stripe card will be charged. Transaction is automatically logged and categorized in CashWise.
+  </div>
+
+  <div class="form-group"><label class="form-label">Amount (BD)</label><input class="form-input" id="stripe-amount" type="number" placeholder="0.000"></div>
+  <div class="form-group"><label class="form-label">Category</label>
+    <select class="form-input" id="stripe-category">
+      <option>🍔 Food</option><option>🚗 Transport</option><option>🧾 Bills</option>
+      <option>🛍️ Shopping</option><option>🏥 Health</option><option>📚 Education</option><option>📦 Other</option>
+    </select>
+  </div>
+  <div class="form-group"><label class="form-label">Description</label><input class="form-input" id="stripe-note" type="text" placeholder="e.g. Electricity bill payment"></div>
+  <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="stripe-date" type="date"></div>
+
+  <div class="drawer-divider"></div>
+
+  <!-- Stripe Card Details -->
+  <div class="stripe-fields">
+    <div class="stripe-fields-title">
+      <span style="color:#a78bfa">⚡</span> Saved Payment Method · Test Mode
+    </div>
+    <div class="stripe-field-row">
+      <div class="stripe-field-label">Card Number</div>
+      <div class="stripe-field-val">4242 4242 4242 4242</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="stripe-field-row"><div class="stripe-field-label">Expiry</div><div class="stripe-field-val">12/28</div></div>
+      <div class="stripe-field-row"><div class="stripe-field-label">CVC</div><div class="stripe-field-val">123</div></div>
+    </div>
+    <div class="stripe-field-row" style="margin-top:8px">
+      <div class="stripe-field-label">Customer ID</div>
+      <div class="stripe-field-val" style="color:#a78bfa;font-size:10px">cus_U2l1yIKJCR33C2</div>
+    </div>
+    <div class="stripe-powered">
+      <span>🔒</span> Secured by <strong style="color:#a78bfa;margin-left:3px">Stripe</strong> · Test Mode · No real charges
+    </div>
+  </div>
+
+  <button class="btn-primary" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);font-family:'Syne',sans-serif" onclick="addStripePayment()">
+    Charge Card & Log Transaction →
+  </button>
+</div>
+
+<!-- ── ADD CATEGORY DRAWER ── -->
+<div class="drawer-overlay" id="cat-overlay" onclick="closeCatDrawer()"></div>
+<div class="drawer" id="cat-drawer">
+  <div class="drawer-title">New Category</div>
+  <div class="drawer-subtitle">Create a custom spending category</div>
+  <div class="drawer-close" onclick="closeCatDrawer()">✕</div>
+  <div class="form-group"><label class="form-label">Category Name</label><input class="form-input" id="cat-name" type="text" placeholder="e.g. Gym & Fitness"></div>
+  <div class="form-group"><label class="form-label">Emoji Icon</label><input class="form-input" id="cat-emoji" type="text" placeholder="🏋️" style="font-size:20px;text-align:center"></div>
+  <div class="form-group"><label class="form-label">Type</label>
+    <select class="form-input" id="cat-type"><option value="expense">Expense</option><option value="income">Income</option><option value="both">Both</option></select>
+  </div>
+  <button class="btn-primary" onclick="addCategory()">Create Category →</button>
+</div>
+
+<!-- ── FRIEND LOAN DRAWER ── -->
+<div class="drawer-overlay" id="friend-overlay" onclick="closeFriendDrawer()"></div>
+<div class="drawer" id="friend-drawer">
+  <div class="drawer-title">Add Friend Loan</div>
+  <div class="drawer-subtitle">Track money lent or borrowed</div>
+  <div class="drawer-close" onclick="closeFriendDrawer()">✕</div>
+  <div class="type-toggle">
+    <div class="type-btn income active" id="btn-lent" onclick="setFriendType('lent')" style="">→ I Lent</div>
+    <div class="type-btn expense" id="btn-borrowed" onclick="setFriendType('borrowed')">← I Borrowed</div>
+  </div>
+  <div class="form-group"><label class="form-label">Friend's Name</label><input class="form-input" id="fl-friend" type="text" placeholder="e.g. Ahmed Ali"></div>
+  <div class="form-group"><label class="form-label">Amount (BD)</label><input class="form-input" id="fl-amount" type="number" placeholder="0.000"></div>
+  <div class="form-group"><label class="form-label">What for?</label><input class="form-input" id="fl-note" type="text" placeholder="e.g. Lunch split, concert tickets..."></div>
+  <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="fl-date" type="date"></div>
+  <div class="form-group"><label class="form-label">Due Date (optional)</label><input class="form-input" id="fl-due" type="date"></div>
+  <button class="btn-primary" onclick="addFriendLoan()">Save →</button>
+</div>
+
+<!-- ── BUDGET DRAWER ── -->
+<div class="drawer-overlay" id="budget-overlay" onclick="closeBudgetDrawer()"></div>
+<div class="drawer" id="budget-drawer">
+  <div class="drawer-title">Set Budget Goal</div>
+  <div class="drawer-subtitle">Set a monthly spending limit</div>
+  <div class="drawer-close" onclick="closeBudgetDrawer()">✕</div>
+  <div class="form-group"><label class="form-label">Category</label>
+    <select class="form-input" id="budget-cat">
+      <option>🍔 Food</option><option>🚗 Transport</option><option>🧾 Bills</option>
+      <option>🛍️ Shopping</option><option>🏥 Health</option><option>📚 Education</option><option>📦 Other</option>
+    </select>
+  </div>
+  <div class="form-group"><label class="form-label">Monthly Limit (BD)</label><input class="form-input" id="budget-limit" type="number" placeholder="100"></div>
+  <button class="btn-primary" onclick="addBudget()">Set Budget →</button>
+</div>
+
+<!-- ── LOAN PAYMENT MODAL ── -->
+<div class="modal-overlay" id="payment-modal">
+  <div class="modal">
+    <div class="modal-close" onclick="closePayment()">✕</div>
+    <div class="modal-title">Pay Installment</div>
+    <div class="modal-sub" id="modal-desc">Payment #1</div>
+    <div class="modal-amount" id="modal-amount">BD 0.000</div>
+    <div class="stripe-fields" style="margin-bottom:12px">
+      <div class="stripe-fields-title"><span>⚡</span> Stripe · Test Card</div>
+      <div class="stripe-field-row"><div class="stripe-field-label">Card</div><div class="stripe-field-val">4242 4242 4242 4242</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="stripe-field-row"><div class="stripe-field-label">Expiry</div><div class="stripe-field-val">12/28</div></div>
+        <div class="stripe-field-row"><div class="stripe-field-label">CVC</div><div class="stripe-field-val">123</div></div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="confirmPayment()" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">Pay via Stripe (Test) →</button>
+    <div class="stripe-powered" style="margin-top:10px">🔒 Secured by <strong style="color:#a78bfa">Stripe</strong> · Test Mode</div>
+  </div>
+</div>
+
+<!-- ── SETTLE MODAL ── -->
+<div class="modal-overlay" id="settle-modal">
+  <div class="modal">
+    <div class="modal-close" onclick="closeSettle()">✕</div>
+    <div class="modal-title">Mark as Settled</div>
+    <div class="modal-sub" id="settle-desc">Confirm repayment</div>
+    <div class="modal-amount" id="settle-amount">BD 0.000</div>
+    <button class="btn-primary" onclick="confirmSettle()">Confirm Settlement →</button>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"><span class="toast-icon">✓</span><span id="toast-msg">Done!</span></div>
+
+<script>
+// ════════ STATE ════════
+let txType = 'income';
+let friendType = 'lent';
+let currentPaymentRow = null;
+let currentSettleIdx = null;
+let amortData = [];
+
+const categories = [
+  {name:'Salary',emoji:'💰',type:'income'},
+  {name:'Freelance',emoji:'💻',type:'income'},
+  {name:'Food',emoji:'🍔',type:'expense'},
+  {name:'Transport',emoji:'🚗',type:'expense'},
+  {name:'Bills',emoji:'🧾',type:'expense'},
+  {name:'Shopping',emoji:'🛍️',type:'expense'},
+  {name:'Health',emoji:'🏥',type:'expense'},
+  {name:'Education',emoji:'📚',type:'expense'},
+  {name:'Other',emoji:'📦',type:'both'},
+];
+
+// method: 'manual' | 'stripe'
+const transactions = [
+  {date:'2026-02-20',category:'💰 Salary',note:'Monthly salary from Array Innovation',type:'income',amount:650,method:'manual'},
+  {date:'2026-02-18',category:'💻 Freelance',note:'React dashboard for client project',type:'income',amount:200,method:'manual'},
+  {date:'2026-02-17',category:'🍔 Food',note:"Lunch at Nando's with teammates",type:'expense',amount:8.5,method:'stripe'},
+  {date:'2026-02-15',category:'🧾 Bills',note:'Monthly electricity & internet',type:'expense',amount:45,method:'stripe'},
+  {date:'2026-02-12',category:'🚗 Transport',note:'Uber rides this week',type:'expense',amount:12,method:'manual'},
+  {date:'2026-02-10',category:'📚 Education',note:'Udemy course — Spring Boot Advanced',type:'expense',amount:15,method:'manual'},
+  {date:'2026-02-08',category:'🛍️ Shopping',note:'New mechanical keyboard for coding',type:'expense',amount:80,method:'manual'},
+  {date:'2026-02-05',category:'💰 Salary',note:'Part-time tutoring sessions',type:'income',amount:120,method:'manual'},
+];
+
+const friendLoans = [
+  {friend:'Ahmed Ali',type:'lent',amount:25,note:'Lunch split last week',date:'2026-02-10',due:'2026-02-28',status:'pending'},
+  {friend:'Sara Mohamed',type:'lent',amount:50,note:'Concert tickets advance',date:'2026-02-05',due:'2026-02-20',status:'pending'},
+  {friend:'Khalid Hassan',type:'borrowed',amount:30,note:'Borrowed for groceries',date:'2026-02-12',due:'2026-03-01',status:'pending'},
+  {friend:'Noor Al-Sayed',type:'borrowed',amount:15,note:'Taxi share',date:'2026-02-18',due:'',status:'settled'},
+];
+
+const budgets = [
+  {cat:'🍔 Food',limit:60,spent:8.5},
+  {cat:'🧾 Bills',limit:80,spent:45},
+  {cat:'🛍️ Shopping',limit:100,spent:80},
+  {cat:'🚗 Transport',limit:30,spent:12},
+  {cat:'📚 Education',limit:50,spent:15},
+];
+
+// ════════ AUTH ════════
+function switchTab(tab){
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',tab==='login'?i===0:i===1));
+  document.getElementById('login-form').style.display=tab==='login'?'block':'none';
+  document.getElementById('register-form').style.display=tab==='register'?'block':'none';
+}
+function enterApp(){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').classList.add('visible');
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('tx-date').value=today;
+  document.getElementById('fl-date').value=today;
+  document.getElementById('stripe-date').value=today;
+  renderAll();
+  initCharts();
+}
+function logout(){document.getElementById('app').classList.remove('visible');document.getElementById('auth-screen').style.display='flex';}
+
+// ════════ NAV ════════
+function goTo(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(el)el.classList.add('active');
+}
+
+// ════════ RENDER ALL ════════
+function renderAll(){
+  renderTables();
+  renderCategories();
+  renderFriends();
+  renderBudget();
+  updateFLBadge();
+  updateDashCount();
+}
+
+function updateDashCount(){
+  const el = document.getElementById('tx-count-dash');
+  if(el) el.textContent = transactions.length;
+}
+
+// ════════ TRANSACTION ROW ════════
+function methodBadge(m){
+  if(m==='stripe') return`<span class="method-badge stripe">⚡ Stripe</span>`;
+  return`<span class="method-badge manual">✎ Manual</span>`;
+}
+
+function txRow(tx){
+  const sign=tx.type==='income'?'+':'-';
+  return`<tr>
+    <td style="color:var(--muted);font-size:10px">${tx.date}</td>
+    <td><span class="cat-badge">${tx.category}</span></td>
+    <td class="tx-note">${tx.note}</td>
+    <td>${methodBadge(tx.method||'manual')}</td>
+    <td><span class="type-badge ${tx.type}">${tx.type}</span></td>
+    <td style="text-align:right"><span class="tx-amount ${tx.type}">${sign}BD ${tx.amount.toFixed(3)}</span></td>
+  </tr>`;
+}
+
+function renderTables(){
+  document.getElementById('recent-tbody').innerHTML=transactions.slice(0,5).map(txRow).join('');
+  document.getElementById('all-tbody').innerHTML=transactions.map(txRow).join('');
+  document.getElementById('tx-count').textContent=transactions.length+' records';
+}
+
+// ════════ MANUAL DRAWER ════════
+function openDrawer(){document.getElementById('drawer-overlay').classList.add('open');document.getElementById('drawer').classList.add('open');}
+function closeDrawer(){document.getElementById('drawer-overlay').classList.remove('open');document.getElementById('drawer').classList.remove('open');}
+function setType(t){
+  txType=t;
+  document.getElementById('btn-income').classList.toggle('active',t==='income');
+  document.getElementById('btn-expense').classList.toggle('active',t==='expense');
+}
+function addTransaction(){
+  const amount=parseFloat(document.getElementById('tx-amount').value);
+  const note=document.getElementById('tx-note').value;
+  const category=document.getElementById('tx-category').value;
+  const date=document.getElementById('tx-date').value;
+  if(!amount||!note){showToast('Fill in amount and description');return;}
+  transactions.unshift({date,category,note,type:txType,amount,method:'manual'});
+  renderTables();renderCategories();renderBudget();updateDashCount();
+  closeDrawer();showToast('Transaction logged manually ✎');
+  document.getElementById('tx-amount').value='';document.getElementById('tx-note').value='';
+}
+
+// ════════ STRIPE DRAWER ════════
+function openStripeDrawer(){document.getElementById('stripe-overlay').classList.add('open');document.getElementById('stripe-drawer').classList.add('open');}
+function closeStripeDrawer(){document.getElementById('stripe-overlay').classList.remove('open');document.getElementById('stripe-drawer').classList.remove('open');}
+
+function addStripePayment(){
+  const amount=parseFloat(document.getElementById('stripe-amount').value);
+  const note=document.getElementById('stripe-note').value;
+  const category=document.getElementById('stripe-category').value;
+  const date=document.getElementById('stripe-date').value;
+  if(!amount||!note){showToast('Fill in amount and description');return;}
+
+  // Simulate Stripe processing
+  const btn = document.querySelector('#stripe-drawer .btn-primary');
+  btn.textContent='Processing...';
+  btn.disabled=true;
+
+  setTimeout(()=>{
+    transactions.unshift({date,category,note,type:'expense',amount,method:'stripe'});
+    renderTables();renderCategories();renderBudget();updateDashCount();
+    closeStripeDrawer();
+    btn.textContent='Charge Card & Log Transaction →';
+    btn.disabled=false;
+    showToast('Stripe payment processed ⚡');
+    document.getElementById('stripe-amount').value='';
+    document.getElementById('stripe-note').value='';
+  },1500);
+}
+
+// ════════ CATEGORIES ════════
+function openCatDrawer(){document.getElementById('cat-overlay').classList.add('open');document.getElementById('cat-drawer').classList.add('open');}
+function closeCatDrawer(){document.getElementById('cat-overlay').classList.remove('open');document.getElementById('cat-drawer').classList.remove('open');}
+function addCategory(){
+  const name=document.getElementById('cat-name').value;
+  const emoji=document.getElementById('cat-emoji').value||'📦';
+  const type=document.getElementById('cat-type').value;
+  if(!name){showToast('Enter a category name');return;}
+  categories.push({name,emoji,type});
+  const opt=`<option>${emoji} ${name}</option>`;
+  document.getElementById('tx-category').innerHTML+=opt;
+  document.getElementById('stripe-category').innerHTML+=opt;
+  document.getElementById('budget-cat').innerHTML+=opt;
+  renderCategories();closeCatDrawer();showToast('Category created!');
+  document.getElementById('cat-name').value='';document.getElementById('cat-emoji').value='';
+}
+function renderCategories(){
+  const grid=document.getElementById('cat-grid');
+  const html=categories.map((c,i)=>{
+    const txs=transactions.filter(t=>t.category.includes(c.name));
+    const total=txs.reduce((s,t)=>s+(t.type==='expense'?t.amount:0),0);
+    const incomeTotal=txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+    const isIncome=c.type==='income';
+    return`<div class="cat-card" onclick="showCatTx('${c.name}','${c.emoji}')">
+      <div class="cat-emoji">${c.emoji}</div>
+      <div class="cat-info">
+        <div class="cat-name">${c.name}</div>
+        <div class="cat-count">${txs.length} transaction${txs.length!==1?'s':''}</div>
+        <div class="cat-total ${isIncome?'income':''}">${isIncome?'+':'−'}BD ${(isIncome?incomeTotal:total).toFixed(3)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  grid.innerHTML=html+`<div class="add-cat-card" onclick="openCatDrawer()">+ New Category</div>`;
+}
+function showCatTx(name,emoji){
+  const txs=transactions.filter(t=>t.category.includes(name));
+  document.getElementById('cat-tx-title').textContent=emoji+' '+name+' Transactions';
+  document.getElementById('cat-tx-tbody').innerHTML=txs.length
+    ?txs.map(t=>`<tr>
+        <td style="color:var(--muted);font-size:10px">${t.date}</td>
+        <td class="tx-note">${t.note}</td>
+        <td>${methodBadge(t.method||'manual')}</td>
+        <td style="text-align:right"><span class="tx-amount ${t.type}">${t.type==='income'?'+':'-'}BD ${t.amount.toFixed(3)}</span></td>
+      </tr>`).join('')
+    :`<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:28px">No transactions in this category</td></tr>`;
+  document.getElementById('cat-tx-card').style.display='block';
+  document.getElementById('cat-tx-card').scrollIntoView({behavior:'smooth'});
+}
+
+// ════════ BUDGET ════════
+function openBudgetDrawer(){document.getElementById('budget-overlay').classList.add('open');document.getElementById('budget-drawer').classList.add('open');}
+function closeBudgetDrawer(){document.getElementById('budget-overlay').classList.remove('open');document.getElementById('budget-drawer').classList.remove('open');}
+function addBudget(){
+  const cat=document.getElementById('budget-cat').value;
+  const limit=parseFloat(document.getElementById('budget-limit').value);
+  if(!limit){showToast('Enter a budget limit');return;}
+  const spent=transactions.filter(t=>t.category===cat&&t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const existing=budgets.findIndex(b=>b.cat===cat);
+  if(existing>=0)budgets[existing].limit=limit;
+  else budgets.push({cat,limit,spent});
+  renderBudget();closeBudgetDrawer();showToast('Budget set!');
+  document.getElementById('budget-limit').value='';
+}
+function renderBudget(){
+  document.getElementById('budget-list').innerHTML=budgets.map(b=>{
+    const pct=Math.min(100,(b.spent/b.limit)*100);
+    const cls=pct>=100?'over':pct>=80?'warn':'ok';
+    const colors={ok:'var(--accent)',warn:'var(--warn)',over:'var(--expense)'};
+    return`<div class="budget-item">
+      <div class="budget-row">
+        <div class="budget-name">${b.cat}</div>
+        <div class="budget-amounts">BD <strong>${b.spent.toFixed(3)}</strong> / BD ${b.limit.toFixed(3)}</div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div>
+      <div style="font-size:9px;color:var(--muted);margin-top:5px;display:flex;justify-content:space-between">
+        <span>${pct.toFixed(0)}% used</span>
+        <span style="color:${colors[cls]}">${pct>=100?'⚠ Over budget!':pct>=80?'⚠ Almost at limit':'✓ On track'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════ FRIEND LOANS ════════
+function openFriendDrawer(){document.getElementById('friend-overlay').classList.add('open');document.getElementById('friend-drawer').classList.add('open');}
+function closeFriendDrawer(){document.getElementById('friend-overlay').classList.remove('open');document.getElementById('friend-drawer').classList.remove('open');}
+function setFriendType(t){
+  friendType=t;
+  document.getElementById('btn-lent').classList.toggle('active',t==='lent');
+  document.getElementById('btn-borrowed').classList.toggle('active',t==='borrowed');
+}
+function addFriendLoan(){
+  const friend=document.getElementById('fl-friend').value;
+  const amount=parseFloat(document.getElementById('fl-amount').value);
+  const note=document.getElementById('fl-note').value;
+  const date=document.getElementById('fl-date').value;
+  const due=document.getElementById('fl-due').value;
+  if(!friend||!amount){showToast('Fill in friend name and amount');return;}
+  friendLoans.unshift({friend,type:friendType,amount,note,date,due,status:'pending'});
+  renderFriends();updateFLBadge();closeFriendDrawer();showToast('Friend loan added!');
+  document.getElementById('fl-friend').value='';document.getElementById('fl-amount').value='';document.getElementById('fl-note').value='';
+}
+function renderFriends(){
+  const pending=friendLoans.filter(f=>f.status==='pending');
+  const lentTotal=pending.filter(f=>f.type==='lent').reduce((s,f)=>s+f.amount,0);
+  const borrowTotal=pending.filter(f=>f.type==='borrowed').reduce((s,f)=>s+f.amount,0);
+  const net=lentTotal-borrowTotal;
+  document.getElementById('fl-lent-total').textContent='BD '+lentTotal.toFixed(3);
+  document.getElementById('fl-lent-count').textContent=pending.filter(f=>f.type==='lent').length+' pending';
+  document.getElementById('fl-borrow-total').textContent='BD '+borrowTotal.toFixed(3);
+  document.getElementById('fl-borrow-count').textContent=pending.filter(f=>f.type==='borrowed').length+' pending';
+  document.getElementById('fl-net').textContent=(net>=0?'+':'')+'BD '+net.toFixed(3);
+  document.getElementById('friends-grid').innerHTML=friendLoans.map((f,i)=>{
+    const initials=f.friend.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return`<div class="friend-card">
+      <div class="friend-avatar ${f.type}">${initials}</div>
+      <div class="friend-info" style="flex:1">
+        <div class="friend-name">${f.friend}</div>
+        <div class="friend-note">${f.note||'—'}</div>
+        <div class="friend-date">${f.date}${f.due?' · due '+f.due:''}</div>
+        <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
+          <span class="type-badge ${f.type==='lent'?'lent':'borrowed'}">${f.type==='lent'?'You lent':'You owe'}</span>
+          <span class="status-tag ${f.status}">${f.status}</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="friend-amount ${f.type}">BD ${f.amount.toFixed(3)}</div>
+        ${f.status==='pending'?`<div style="margin-top:8px"><button class="pay-btn" onclick="openSettle(${i})">Settle</button></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function updateFLBadge(){
+  const count=friendLoans.filter(f=>f.status==='pending').length;
+  const badge=document.getElementById('fl-badge');
+  badge.textContent=count;
+  badge.style.display=count?'':'none';
+}
+function openSettle(i){
+  currentSettleIdx=i;
+  const f=friendLoans[i];
+  document.getElementById('settle-desc').textContent=`${f.type==='lent'?f.friend+' pays you back':'You pay back '+f.friend}`;
+  document.getElementById('settle-amount').textContent=`BD ${f.amount.toFixed(3)}`;
+  document.getElementById('settle-modal').classList.add('open');
+}
+function closeSettle(){document.getElementById('settle-modal').classList.remove('open');}
+function confirmSettle(){
+  if(currentSettleIdx===null)return;
+  friendLoans[currentSettleIdx].status='settled';
+  renderFriends();updateFLBadge();closeSettle();showToast('Settled! 🎉');
+}
+
+// ════════ LOAN CALCULATOR ════════
+function calculateLoan(){
+  const P=parseFloat(document.getElementById('loan-principal').value);
+  const annual=parseFloat(document.getElementById('loan-rate').value);
+  const n=parseInt(document.getElementById('loan-term').value);
+  const name=document.getElementById('loan-name').value||'Loan';
+  if(!P||!annual||!n){showToast('Fill all loan fields');return;}
+  const r=(annual/100)/12;
+  const monthly=(P*r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+  const total=monthly*n;
+  const interest=total-P;
+  document.getElementById('s-monthly').textContent='BD '+monthly.toFixed(3);
+  document.getElementById('s-term').textContent=n;
+  document.getElementById('s-interest').textContent='BD '+interest.toFixed(3);
+  document.getElementById('s-total').textContent='BD '+total.toFixed(3);
+  document.getElementById('loan-summary').classList.add('visible');
+  amortData=[];
+  let bal=P;
+  const now=new Date();
+  for(let i=1;i<=n;i++){
+    const int=bal*r;const prin=monthly-int;bal-=prin;
+    const d=new Date(now);d.setMonth(d.getMonth()+i);
+    amortData.push({num:i,due:d.toISOString().split('T')[0],principal:prin,interest:int,balance:Math.max(0,bal),monthly,paid:false,name});
+  }
+  renderAmort();
+}
+function renderAmort(){
+  document.getElementById('amort-card').innerHTML=`<table>
+    <thead><tr><th>#</th><th>Due Date</th><th>Principal</th><th>Interest</th><th>Balance</th><th>Action</th></tr></thead>
+    <tbody>${amortData.map((r,i)=>`<tr class="${r.paid?'paid-row':''}">
+      <td style="color:var(--muted);font-size:10px">${r.num}</td>
+      <td style="font-size:10px">${r.due}</td>
+      <td>BD ${r.principal.toFixed(3)}</td>
+      <td style="color:var(--expense)">BD ${r.interest.toFixed(3)}</td>
+      <td style="color:var(--muted)">BD ${r.balance.toFixed(3)}</td>
+      <td>${r.paid?'<span class="paid-badge">✓ Paid</span>':`<button class="pay-btn" onclick="openPayment(${i})">Pay</button>`}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+function openPayment(i){currentPaymentRow=i;const r=amortData[i];document.getElementById('modal-desc').textContent=`Payment #${r.num} · ${r.name}`;document.getElementById('modal-amount').textContent=`BD ${r.monthly.toFixed(3)}`;document.getElementById('payment-modal').classList.add('open');}
+function closePayment(){document.getElementById('payment-modal').classList.remove('open');}
+function confirmPayment(){if(currentPaymentRow===null)return;amortData[currentPaymentRow].paid=true;renderAmort();closePayment();showToast('Payment processed via Stripe ⚡');}
+
+// ════════ CHARTS ════════
+function initCharts(){
+  const mono={family:"'JetBrains Mono', monospace",size:10};
+  const gridColor='rgba(30,45,61,0.8)';
+
+  new Chart(document.getElementById('donutChart'),{type:'doughnut',data:{
+    labels:['Food','Bills','Transport','Shopping','Education'],
+    datasets:[{data:[8.5,45,12,80,15],backgroundColor:['#00E5A0','#FF4D6A','#FFB547','#4D9FFF','#A78BFA'],borderColor:'#0F1419',borderWidth:3,hoverOffset:8}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'right',labels:{color:'#5B7A94',font:mono,boxWidth:8,padding:10}}}}});
+
+  new Chart(document.getElementById('barChart'),{type:'bar',data:{
+    labels:['Sep','Oct','Nov','Dec','Jan','Feb'],
+    datasets:[
+      {label:'Income',data:[800,950,1100,1400,900,970],backgroundColor:'rgba(0,229,160,0.6)',borderRadius:5,borderSkipped:false},
+      {label:'Expenses',data:[420,560,680,900,500,160.5],backgroundColor:'rgba(255,77,106,0.6)',borderRadius:5,borderSkipped:false}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#5B7A94',font:mono,boxWidth:8}}},scales:{x:{grid:{color:gridColor},ticks:{color:'#5B7A94',font:mono}},y:{grid:{color:gridColor},ticks:{color:'#5B7A94',font:mono,callback:v=>'BD '+v}}}}});
+
+  new Chart(document.getElementById('lineChart'),{type:'line',data:{
+    labels:['Sep','Oct','Nov','Dec','Jan','Feb'],
+    datasets:[{label:'Net Balance',data:[380,390,420,500,400,809.5],borderColor:'#00E5A0',backgroundColor:'rgba(0,229,160,0.06)',fill:true,tension:.4,pointBackgroundColor:'#00E5A0',pointRadius:4,pointBorderColor:'#080C10',pointBorderWidth:2}]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#5B7A94',font:mono,boxWidth:8}}},scales:{x:{grid:{color:gridColor},ticks:{color:'#5B7A94',font:mono}},y:{grid:{color:gridColor},ticks:{color:'#5B7A94',font:mono,callback:v=>'BD '+v}}}}});
+
+  new Chart(document.getElementById('hbarChart'),{type:'bar',data:{
+    labels:['Shopping','Bills','Transport','Education','Food'],
+    datasets:[{data:[80,45,12,15,8.5],backgroundColor:['#4D9FFF','#FF4D6A','#FFB547','#A78BFA','#00E5A0'],borderRadius:5,borderSkipped:false}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:'#5B7A94',font:mono,callback:v=>'BD '+v}},y:{grid:{color:gridColor},ticks:{color:'#5B7A94',font:mono}}}}});
+
+  new Chart(document.getElementById('incomeChart'),{type:'doughnut',data:{
+    labels:['Salary (Array)','Freelance','Tutoring'],
+    datasets:[{data:[650,200,120],backgroundColor:['#00E5A0','#4D9FFF','#A78BFA'],borderColor:'#0F1419',borderWidth:3,hoverOffset:6}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{color:'#5B7A94',font:mono,boxWidth:8,padding:12}}}}});
+}
+
+// ════════ TOAST ════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
