@@ -149,12 +149,12 @@ function Dashboard() {
         <nav className="nav">
           <div className="nav-section">Overview</div>
           <div className="nav-item active">▦ Dashboard</div>
-          <div className="nav-item">📊 Analytics</div>
+          <div className="nav-item" onClick={() => navigate('/analytics')}>📊 Analytics</div>
           
           <div className="nav-section">Money</div>
           <div className="nav-item">↕ Transactions</div>
           <div className="nav-item">🏷 Categories</div>
-          <div className="nav-item">🎯 Budget Goals</div>
+          <div className="nav-item" onClick={() => navigate('/budget')}>🎯 Budget Goals</div>
           
           <div className="nav-section">Finance</div>
           <div className="nav-item">🏦 Loan Planner</div>
@@ -226,8 +226,8 @@ function Dashboard() {
         <div className="quick-actions">
           <button className="qa-btn primary" onClick={() => setShowDrawer(true)}>+ Add Transaction</button>
           <button className="qa-btn stripe-qa">💳 Pay via Stripe</button>
-          <button className="qa-btn">📊 View Budgets</button>
-          <button className="qa-btn">📈 Analytics</button>
+          <button className="qa-btn" onClick={() => navigate('/budget')}>📊 View Budgets</button>
+          <button className="qa-btn" onClick={() => navigate('/analytics')}>📈 Analytics</button>
         </div>
 
         {/* CHARTS */}
