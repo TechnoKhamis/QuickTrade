@@ -1,23 +1,75 @@
 package com.example.cashwise.controller;
 
-import java.util.Map;
-
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.example.cashwise.dto.UserUpdateRequest;
+import com.example.cashwise.entity.User;
+import com.example.cashwise.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
-
-    @PostMapping("/bank-card")
-    public Map<String, String> saveBankCard(@RequestBody Map<String, String> cardData) {
-        // TODO: Save card data to database
-        String bankName = cardData.get("bankName");
-        String stripePaymentMethodId = cardData.get("stripePaymentMethodId");
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        String userEmail = authentication.getName();
+        User user = userRepository.findByEmail(userEmail)
+            .orElseThrow(() -> new RuntimeException("User not found"));
         
-        // For now, just return success
-        return Map.of("message", "Card saved successfully");
+        return ResponseEntity.ok(new UserResponse(
+            user.getId(),
+            user.getFullName(),
+            user.getEmail(),
+            user.getCurrency()
+        ));
+    }
+    
+    @PutMapping("/me")
+    public ResponseEntity<?> updateUser(
+            @RequestBody UserUpdateRequest request,
+            Authentication authentication) {
+        String userEmail = authentication.getName();
+        User user = userRepository.findByEmail(userEmail)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        if (request.getFullName() != null) {
+            user.setFullName(request.getFullName());
+        }
+        if (request.getCurrency() != null) {
+            user.setCurrency(request.getCurrency());
+        }
+        
+        user = userRepository.save(user);
+        
+        return ResponseEntity.ok(new UserResponse(
+            user.getId(),
+            user.getFullName(),
+            user.getEmail(),
+            user.getCurrency()
+        ));
+    }
+    
+    static class UserResponse {
+        private Long id;
+        private String fullName;
+        private String email;
+        private String currency;
+        
+        public UserResponse(Long id, String fullName, String email, String currency) {
+            this.id = id;
+            this.fullName = fullName;
+            this.email = email;
+            this.currency = currency;
+        }
+        
+        public Long getId() { return id; }
+        public String getFullName() { return fullName; }
+        public String getEmail() { return email; }
+        public String getCurrency() { return currency; }
     }
 }

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import { useCurrency } from '../context/CurrencyContext';
 import './Categories.css';
 
 function Categories() {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
+  const { currency } = useCurrency();
   const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [categoryStats, setCategoryStats] = useState({});
@@ -107,13 +109,13 @@ function Categories() {
           <div className="nav-item" onClick={() => navigate('/budget')}>🎯 Budget Goals</div>
           
           <div className="nav-section">Finance</div>
-          <div className="nav-item">🏦 Loan Planner</div>
-          <div className="nav-item">🤝 Friend Loans</div>
+          <div className="nav-item" onClick={() => navigate('/loan-planner')}>🏦 Loan Planner</div>
+          <div className="nav-item" onClick={() => navigate('/friend-loans')}>🤝 Friend Loans</div>
           
           <div className="sidebar-divider"></div>
           
           <div className="nav-section">Account</div>
-          <div className="nav-item">⚙ Settings</div>
+          <div className="nav-item" onClick={() => navigate('/settings')}>⚙ Settings</div>
           <div className="nav-item" onClick={handleLogout}>⤴ Sign Out</div>
         </nav>
         
@@ -122,7 +124,7 @@ function Categories() {
             <div className="user-avatar">{user?.fullName?.substring(0,2).toUpperCase() || 'U'}</div>
             <div>
               <div className="user-name">{user?.fullName || user?.email}</div>
-              <div className="user-role">Personal · BHD</div>
+              <div className="user-role">Personal · {currency}</div>
             </div>
           </div>
         </div>
@@ -149,7 +151,7 @@ function Categories() {
                   <div className="cat-name">{cat.name}</div>
                   <div className="cat-count">{stats.count} transactions</div>
                   <div className={`cat-total ${cat.type.toLowerCase()}`}>
-                    {cat.type === 'INCOME' ? '+' : '-'}BD {stats.total.toFixed(3)}
+                    {cat.type === 'INCOME' ? '+' : '-'}{currency} {stats.total.toFixed(3)}
                   </div>
                 </div>
               </div>

@@ -116,7 +116,7 @@ function Analytics() {
           
           <div className="nav-section">Finance</div>
           <div className="nav-item">🏦 Loan Planner</div>
-          <div className="nav-item">🤝 Friend Loans</div>
+          <div className="nav-item" onClick={() => navigate('/friend-loans')}>🤝 Friend Loans</div>
           
           <div className="sidebar-divider"></div>
           

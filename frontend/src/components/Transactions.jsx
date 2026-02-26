@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import { useCurrency } from '../context/CurrencyContext';
 import './Transactions.css';
 
 function Transactions() {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
+  const { currency } = useCurrency();
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -136,13 +138,13 @@ function Transactions() {
           <div className="nav-item" onClick={() => navigate('/budget')}>🎯 Budget Goals</div>
           
           <div className="nav-section">Finance</div>
-          <div className="nav-item">🏦 Loan Planner</div>
-          <div className="nav-item">🤝 Friend Loans</div>
+          <div className="nav-item" onClick={() => navigate('/loan-planner')}>🏦 Loan Planner</div>
+          <div className="nav-item" onClick={() => navigate('/friend-loans')}>🤝 Friend Loans</div>
           
           <div className="sidebar-divider"></div>
           
           <div className="nav-section">Account</div>
-          <div className="nav-item">⚙ Settings</div>
+          <div className="nav-item" onClick={() => navigate('/settings')}>⚙ Settings</div>
           <div className="nav-item" onClick={handleLogout}>⤴ Sign Out</div>
         </nav>
         
@@ -151,7 +153,7 @@ function Transactions() {
             <div className="user-avatar">{user?.fullName?.substring(0,2).toUpperCase() || 'U'}</div>
             <div>
               <div className="user-name">{user?.fullName || user?.email}</div>
-              <div className="user-role">Personal · BHD</div>
+              <div className="user-role">Personal · {currency}</div>
             </div>
           </div>
         </div>
@@ -217,7 +219,7 @@ function Transactions() {
                     </span>
                   </td>
                   <td className={`tx-amount ${tx.type.toLowerCase()}`}>
-                    {tx.type === 'INCOME' ? '+' : '-'}BD {tx.amount.toFixed(3)}
+                    {tx.type === 'INCOME' ? '+' : '-'}{currency} {tx.amount.toFixed(3)}
                   </td>
                 </tr>
               ))}
@@ -252,7 +254,7 @@ function Transactions() {
 
           {/* Amount */}
           <div className="form-group">
-            <label className="form-label">AMOUNT (BD)</label>
+            <label className="form-label">AMOUNT ({currency})</label>
             <input 
               className="form-input" 
               type="number" 

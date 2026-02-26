@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import authService from '../services/authService';
+import { useCurrency } from '../context/CurrencyContext';
 import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import './Dashboard.css';
@@ -10,6 +11,7 @@ ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Le
 function Dashboard() {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
+  const { currency } = useCurrency();
   const [stats, setStats] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -157,13 +159,13 @@ function Dashboard() {
           <div className="nav-item" onClick={() => navigate('/budget')}>🎯 Budget Goals</div>
           
           <div className="nav-section">Finance</div>
-          <div className="nav-item">🏦 Loan Planner</div>
-          <div className="nav-item">🤝 Friend Loans</div>
+          <div className="nav-item" onClick={() => navigate('/loan-planner')}>🏦 Loan Planner</div>
+          <div className="nav-item" onClick={() => navigate('/friend-loans')}>🤝 Friend Loans</div>
           
           <div className="sidebar-divider"></div>
           
           <div className="nav-section">Account</div>
-          <div className="nav-item">⚙ Settings</div>
+          <div className="nav-item" onClick={() => navigate('/settings')}>⚙ Settings</div>
           <div className="nav-item" onClick={handleLogout}>⤴ Sign Out</div>
         </nav>
         
@@ -172,7 +174,7 @@ function Dashboard() {
             <div className="user-avatar">{user?.fullName?.substring(0,2).toUpperCase() || 'U'}</div>
             <div>
               <div className="user-name">{user?.fullName || user?.email}</div>
-              <div className="user-role">Personal · BHD</div>
+              <div className="user-role">Personal · {currency}</div>
             </div>
           </div>
         </div>
@@ -196,22 +198,22 @@ function Dashboard() {
         <div className="stats-row">
           <div className="stat-card income-card">
             <div className="stat-label">TOTAL INCOME</div>
-            <div className="stat-value">BD {stats?.totalIncome?.toFixed(3) || '0.000'}</div>
-            <div className="stat-change">+BD 0.0 from last month</div>
+            <div className="stat-value">{currency} {stats?.totalIncome?.toFixed(3) || '0.000'}</div>
+            <div className="stat-change">+{currency} 0.0 from last month</div>
             <div className="stat-icon">↑</div>
           </div>
           
           <div className="stat-card expense-card">
             <div className="stat-label">TOTAL EXPENSES</div>
-            <div className="stat-value">BD {stats?.totalExpenses?.toFixed(3) || '0.000'}</div>
+            <div className="stat-value">{currency} {stats?.totalExpenses?.toFixed(3) || '0.000'}</div>
             <div className="stat-change">+ 0.0% vs last month</div>
             <div className="stat-icon">↓</div>
           </div>
           
           <div className="stat-card savings-card">
             <div className="stat-label">NET SAVINGS</div>
-            <div className="stat-value">BD {stats?.netSavings?.toFixed(3) || '0.000'}</div>
-            <div className="stat-change">+BD 0.0 from last month</div>
+            <div className="stat-value">{currency} {stats?.netSavings?.toFixed(3) || '0.000'}</div>
+            <div className="stat-change">+{currency} 0.0 from last month</div>
             <div className="stat-icon">💰</div>
           </div>
           
@@ -320,7 +322,7 @@ function Dashboard() {
                         ticks: { 
                           color: '#5B7A94',
                           font: { family: 'JetBrains Mono', size: 10 },
-                          callback: (value) => 'BD ' + value
+                          callback: (value) => currency + ' ' + value
                         }
                       }
                     }
@@ -372,7 +374,7 @@ function Dashboard() {
                     </span>
                   </td>
                   <td className={`tx-amount ${tx.type.toLowerCase()}`}>
-                    {tx.type === 'INCOME' ? '+' : '-'}BD {tx.amount.toFixed(3)}
+                    {tx.type === 'INCOME' ? '+' : '-'}{currency} {tx.amount.toFixed(3)}
                   </td>
                 </tr>
               ))}
@@ -407,7 +409,7 @@ function Dashboard() {
 
           {/* Amount */}
           <div className="form-group">
-            <label className="form-label">AMOUNT (BD)</label>
+            <label className="form-label">AMOUNT ({currency})</label>
             <input 
               className="form-input" 
               type="number" 
