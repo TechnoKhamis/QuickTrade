@@ -1,7 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import authService from '../services/authService';
+import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
+import { Doughnut, Bar } from 'react-chartjs-2';
 import './Dashboard.css';
+
+ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -13,6 +17,14 @@ function Dashboard() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [txType, setTxType] = useState('EXPENSE');
   const [paymentMode, setPaymentMode] = useState('manual');
+  const [chartData, setChartData] = useState({
+    categoryLabels: [],
+    categoryData: [],
+    categoryColors: ['#00E5A0', '#FF4D6A', '#FFB547', '#4D9FFF', '#A78BFA', '#8B5CF6', '#EC4899'],
+    monthLabels: [],
+    monthIncomeData: [],
+    monthExpenseData: []
+  });
   const [formData, setFormData] = useState({
     amount: '',
     categoryId: '',
@@ -44,6 +56,25 @@ function Dashboard() {
         const txData = await txRes.json();
         setStats(statsData);
         setTransactions(txData.slice(0, 5));
+        
+        // Process chart data
+        if (statsData.spendingByCategory) {
+          const categoryEntries = Object.entries(statsData.spendingByCategory);
+          setChartData(prev => ({
+            ...prev,
+            categoryLabels: categoryEntries.map(([name]) => name),
+            categoryData: categoryEntries.map(([, amount]) => parseFloat(amount))
+          }));
+        }
+        
+        if (statsData.monthlyTrends) {
+          setChartData(prev => ({
+            ...prev,
+            monthLabels: statsData.monthlyTrends.map(t => t.month),
+            monthIncomeData: statsData.monthlyTrends.map(t => parseFloat(t.income)),
+            monthExpenseData: statsData.monthlyTrends.map(t => parseFloat(t.expenses))
+          }));
+        }
       }
     } catch (err) {
       console.error('Error:', err);
@@ -197,6 +228,111 @@ function Dashboard() {
           <button className="qa-btn stripe-qa">💳 Pay via Stripe</button>
           <button className="qa-btn">📊 View Budgets</button>
           <button className="qa-btn">📈 Analytics</button>
+        </div>
+
+        {/* CHARTS */}
+        <div className="charts-row">
+          <div className="chart-card">
+            <div className="chart-title">Spending by Category</div>
+            <div style={{height: '210px'}}>
+              {chartData.categoryLabels.length > 0 ? (
+                <Doughnut 
+                  data={{
+                    labels: chartData.categoryLabels,
+                    datasets: [{
+                      data: chartData.categoryData,
+                      backgroundColor: chartData.categoryColors.slice(0, chartData.categoryLabels.length),
+                      borderColor: '#0F1419',
+                      borderWidth: 3,
+                      hoverOffset: 8
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                      legend: {
+                        position: 'right',
+                        labels: {
+                          color: '#5B7A94',
+                          font: { family: 'JetBrains Mono', size: 10 },
+                          boxWidth: 8,
+                          padding: 10
+                        }
+                      }
+                    }
+                  }}
+                />
+              ) : (
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--muted)', fontSize: '11px'}}>
+                  No expense data available
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="chart-card">
+            <div className="chart-title">Income vs Expenses — Last 6 Months</div>
+            <div style={{height: '210px'}}>
+              {chartData.monthLabels.length > 0 ? (
+                <Bar 
+                  data={{
+                    labels: chartData.monthLabels,
+                    datasets: [
+                      {
+                        label: 'Income',
+                        data: chartData.monthIncomeData,
+                        backgroundColor: '#00E5A0',
+                        borderRadius: 5,
+                        borderSkipped: false
+                      },
+                      {
+                        label: 'Expenses',
+                        data: chartData.monthExpenseData,
+                        backgroundColor: '#FF4D6A',
+                        borderRadius: 5,
+                        borderSkipped: false
+                      }
+                    ]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        labels: {
+                          color: '#5B7A94',
+                          font: { family: 'JetBrains Mono', size: 10 },
+                          boxWidth: 8
+                        }
+                      }
+                    },
+                    scales: {
+                      x: {
+                        grid: { color: 'rgba(30,45,61,0.8)' },
+                        ticks: { 
+                          color: '#5B7A94',
+                          font: { family: 'JetBrains Mono', size: 10 }
+                        }
+                      },
+                      y: {
+                        grid: { color: 'rgba(30,45,61,0.8)' },
+                        ticks: { 
+                          color: '#5B7A94',
+                          font: { family: 'JetBrains Mono', size: 10 },
+                          callback: (value) => 'BD ' + value
+                        }
+                      }
+                    }
+                  }}
+                />
+              ) : (
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--muted)', fontSize: '11px'}}>
+                  No transaction data available
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="table-card">
