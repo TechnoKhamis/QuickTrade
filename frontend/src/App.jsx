@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
+import Transactions from './components/Transactions';
+import Categories from './components/Categories';
 import Analytics from './components/Analytics';
 import Budget from './components/Budget';
 import authService from './services/authService';
@@ -22,6 +24,22 @@ function App() {
           element={
             <PrivateRoute>
               <Dashboard />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/transactions" 
+          element={
+            <PrivateRoute>
+              <Transactions />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/categories" 
+          element={
+            <PrivateRoute>
+              <Categories />
             </PrivateRoute>
           } 
         />

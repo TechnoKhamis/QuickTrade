@@ -1,30 +1,19 @@
-import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
-import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-import { Doughnut, Bar } from 'react-chartjs-2';
-import './Dashboard.css';
+import './Transactions.css';
 
-ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
-
-function Dashboard() {
+function Transactions() {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
-  const [stats, setStats] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [txType, setTxType] = useState('EXPENSE');
   const [paymentMode, setPaymentMode] = useState('manual');
-  const [chartData, setChartData] = useState({
-    categoryLabels: [],
-    categoryData: [],
-    categoryColors: ['#00E5A0', '#FF4D6A', '#FFB547', '#4D9FFF', '#A78BFA', '#8B5CF6', '#EC4899'],
-    monthLabels: [],
-    monthIncomeData: [],
-    monthExpenseData: []
-  });
   const [formData, setFormData] = useState({
     amount: '',
     categoryId: '',
@@ -34,47 +23,21 @@ function Dashboard() {
   });
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchTransactions();
     fetchCategories();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchTransactions = async () => {
     try {
       const token = authService.getToken();
+      const res = await fetch('http://localhost:8080/api/transactions', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       
-      const [statsRes, txRes] = await Promise.all([
-        fetch('http://localhost:8080/api/dashboard/stats', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('http://localhost:8080/api/transactions', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-      ]);
-      
-      if (statsRes.ok && txRes.ok) {
-        const statsData = await statsRes.json();
-        const txData = await txRes.json();
-        setStats(statsData);
-        setTransactions(txData.slice(0, 5));
-        
-        // Process chart data
-        if (statsData.spendingByCategory) {
-          const categoryEntries = Object.entries(statsData.spendingByCategory);
-          setChartData(prev => ({
-            ...prev,
-            categoryLabels: categoryEntries.map(([name]) => name),
-            categoryData: categoryEntries.map(([, amount]) => parseFloat(amount))
-          }));
-        }
-        
-        if (statsData.monthlyTrends) {
-          setChartData(prev => ({
-            ...prev,
-            monthLabels: statsData.monthlyTrends.map(t => t.month),
-            monthIncomeData: statsData.monthlyTrends.map(t => parseFloat(t.income)),
-            monthExpenseData: statsData.monthlyTrends.map(t => parseFloat(t.expenses))
-          }));
-        }
+      if (res.ok) {
+        const data = await res.json();
+        setTransactions(data);
+        setFilteredTransactions(data);
       }
     } catch (err) {
       console.error('Error:', err);
@@ -126,11 +89,27 @@ function Dashboard() {
           transactionDate: new Date().toISOString().split('T')[0],
           isManual: true
         });
-        fetchDashboardData();
+        fetchTransactions();
       }
     } catch (err) {
       console.error('Error creating transaction:', err);
     }
+  };
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setFilteredTransactions(transactions);
+      return;
+    }
+
+    const filtered = transactions.filter(tx => 
+      tx.description?.toLowerCase().includes(query.toLowerCase()) ||
+      tx.categoryName?.toLowerCase().includes(query.toLowerCase()) ||
+      tx.amount.toString().includes(query) ||
+      tx.transactionDate.includes(query)
+    );
+    setFilteredTransactions(filtered);
   };
 
   const handleLogout = () => {
@@ -148,7 +127,7 @@ function Dashboard() {
         </div>
         <nav className="nav">
           <div className="nav-section">Overview</div>
-          <div className="nav-item active">▦ Dashboard</div>
+          <div className="nav-item" onClick={() => navigate('/dashboard')}>▦ Dashboard</div>
           <div className="nav-item" onClick={() => navigate('/analytics')}>📊 Analytics</div>
           
           <div className="nav-section">Money</div>
@@ -179,168 +158,34 @@ function Dashboard() {
       </aside>
 
       <main className="main-content">
-        <div className="dash-hero">
-          <div className="hero-left">
-            <div className="hero-greeting">FEBRUARY 2026 · ALL ACCOUNTS</div>
-            <div className="hero-title">Good morning, <span>{user?.fullName?.split(' ')[0] || 'User'}</span> 👋</div>
-            <div className="hero-sub">You've tracked {stats?.transactionCount || 0} transactions this month</div>
+        <div className="page-header">
+          <div>
+            <div className="page-title">Transactions</div>
+            <div className="page-sub">All income & expenses · Manual & Stripe</div>
           </div>
-          <div className="hero-right">
-            <div className="stripe-pill">
-              <div className="stripe-dot"></div>
-              Stripe · Test Mode
-            </div>
+          <div className="header-actions">
+            <button className="btn-outline">💳 Stripe Payments</button>
+            <button className="btn-sm" onClick={() => setShowDrawer(true)}>+ Manual Entry</button>
           </div>
         </div>
 
-        <div className="stats-row">
-          <div className="stat-card income-card">
-            <div className="stat-label">TOTAL INCOME</div>
-            <div className="stat-value">BD {stats?.totalIncome?.toFixed(3) || '0.000'}</div>
-            <div className="stat-change">+BD 0.0 from last month</div>
-            <div className="stat-icon">↑</div>
+        <div className="tx-filters">
+          <div className="filter-label">🔍 SEARCH</div>
+          <input 
+            type="text" 
+            className="search-input" 
+            placeholder="Search by description, category, amount, or date..."
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="tx-table-card">
+          <div className="tx-table-header">
+            <div className="tx-header-title">All Transactions</div>
           </div>
           
-          <div className="stat-card expense-card">
-            <div className="stat-label">TOTAL EXPENSES</div>
-            <div className="stat-value">BD {stats?.totalExpenses?.toFixed(3) || '0.000'}</div>
-            <div className="stat-change">+ 0.0% vs last month</div>
-            <div className="stat-icon">↓</div>
-          </div>
-          
-          <div className="stat-card savings-card">
-            <div className="stat-label">NET SAVINGS</div>
-            <div className="stat-value">BD {stats?.netSavings?.toFixed(3) || '0.000'}</div>
-            <div className="stat-change">+BD 0.0 from last month</div>
-            <div className="stat-icon">💰</div>
-          </div>
-          
-          <div className="stat-card tx-card">
-            <div className="stat-label">TRANSACTIONS</div>
-            <div className="stat-value">{stats?.transactionCount || 0}</div>
-            <div className="stat-change">This month</div>
-            <div className="stat-icon">📊</div>
-          </div>
-        </div>
-
-        <div className="quick-actions">
-          <button className="qa-btn primary" onClick={() => setShowDrawer(true)}>+ Add Transaction</button>
-          <button className="qa-btn stripe-qa">💳 Pay via Stripe</button>
-          <button className="qa-btn" onClick={() => navigate('/budget')}>📊 View Budgets</button>
-          <button className="qa-btn" onClick={() => navigate('/analytics')}>📈 Analytics</button>
-        </div>
-
-        {/* CHARTS */}
-        <div className="charts-row">
-          <div className="chart-card">
-            <div className="chart-title">Spending by Category</div>
-            <div style={{height: '210px'}}>
-              {chartData.categoryLabels.length > 0 ? (
-                <Doughnut 
-                  data={{
-                    labels: chartData.categoryLabels,
-                    datasets: [{
-                      data: chartData.categoryData,
-                      backgroundColor: chartData.categoryColors.slice(0, chartData.categoryLabels.length),
-                      borderColor: '#0F1419',
-                      borderWidth: 3,
-                      hoverOffset: 8
-                    }]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                      legend: {
-                        position: 'right',
-                        labels: {
-                          color: '#5B7A94',
-                          font: { family: 'JetBrains Mono', size: 10 },
-                          boxWidth: 8,
-                          padding: 10
-                        }
-                      }
-                    }
-                  }}
-                />
-              ) : (
-                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--muted)', fontSize: '11px'}}>
-                  No expense data available
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="chart-card">
-            <div className="chart-title">Income vs Expenses — Last 6 Months</div>
-            <div style={{height: '210px'}}>
-              {chartData.monthLabels.length > 0 ? (
-                <Bar 
-                  data={{
-                    labels: chartData.monthLabels,
-                    datasets: [
-                      {
-                        label: 'Income',
-                        data: chartData.monthIncomeData,
-                        backgroundColor: '#00E5A0',
-                        borderRadius: 5,
-                        borderSkipped: false
-                      },
-                      {
-                        label: 'Expenses',
-                        data: chartData.monthExpenseData,
-                        backgroundColor: '#FF4D6A',
-                        borderRadius: 5,
-                        borderSkipped: false
-                      }
-                    ]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        labels: {
-                          color: '#5B7A94',
-                          font: { family: 'JetBrains Mono', size: 10 },
-                          boxWidth: 8
-                        }
-                      }
-                    },
-                    scales: {
-                      x: {
-                        grid: { color: 'rgba(30,45,61,0.8)' },
-                        ticks: { 
-                          color: '#5B7A94',
-                          font: { family: 'JetBrains Mono', size: 10 }
-                        }
-                      },
-                      y: {
-                        grid: { color: 'rgba(30,45,61,0.8)' },
-                        ticks: { 
-                          color: '#5B7A94',
-                          font: { family: 'JetBrains Mono', size: 10 },
-                          callback: (value) => 'BD ' + value
-                        }
-                      }
-                    }
-                  }}
-                />
-              ) : (
-                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--muted)', fontSize: '11px'}}>
-                  No transaction data available
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="table-card">
-          <div className="table-head">
-            <div className="table-title">Recent Transactions</div>
-            <button className="btn-sm" onClick={() => navigate('/transactions')}>View All →</button>
-          </div>
-          <table>
+          <table className="tx-table">
             <thead>
               <tr>
                 <th>DATE</th>
@@ -352,15 +197,15 @@ function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {transactions.map(tx => (
+              {filteredTransactions.map(tx => (
                 <tr key={tx.id}>
-                  <td>{tx.transactionDate}</td>
+                  <td className="tx-date">{tx.transactionDate}</td>
                   <td>
                     <span className="cat-badge">
                       {tx.categoryEmoji} {tx.categoryName}
                     </span>
                   </td>
-                  <td className="tx-note">{tx.description}</td>
+                  <td className="tx-desc">{tx.description}</td>
                   <td>
                     <span className={`method-badge ${tx.isManual ? 'manual' : 'stripe'}`}>
                       {tx.isManual ? '📄 Manual' : '💳 Stripe'}
@@ -502,4 +347,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default Transactions;

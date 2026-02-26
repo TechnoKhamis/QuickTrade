@@ -137,8 +137,8 @@ function Budget() {
           <div className="nav-item" onClick={() => navigate('/analytics')}>📊 Analytics</div>
           
           <div className="nav-section">Money</div>
-          <div className="nav-item">↕ Transactions</div>
-          <div className="nav-item">🏷 Categories</div>
+          <div className="nav-item" onClick={() => navigate('/transactions')}>↕ Transactions</div>
+          <div className="nav-item" onClick={() => navigate('/categories')}>🏷 Categories</div>
           <div className="nav-item active">🎯 Budget Goals</div>
           
           <div className="nav-section">Finance</div>

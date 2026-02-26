@@ -1,0 +1,153 @@
+/* Import base styles from Dashboard */
+@import './Dashboard.css';
+
+.page-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  margin-bottom:28px;
+}
+
+.page-title{
+  font-family:'Syne',sans-serif;
+  font-size:26px;
+  font-weight:800;
+  letter-spacing:-.8px;
+}
+
+.page-sub{
+  font-size:11px;
+  color:var(--muted);
+  margin-top:3px;
+  letter-spacing:.3px;
+}
+
+.header-actions{
+  display:flex;
+  gap:10px;
+}
+
+.btn-outline{
+  height:36px;
+  padding:0 16px;
+  background:transparent;
+  color:var(--accent);
+  border:1px solid rgba(0,229,160,.3);
+  border-radius:8px;
+  font-family:'Syne',sans-serif;
+  font-weight:600;
+  font-size:11px;
+  cursor:pointer;
+  transition:all .2s;
+}
+
+.btn-outline:hover{
+  background:rgba(0,229,160,0.1);
+  border-color:rgba(0,229,160,.6);
+}
+
+/* FILTERS */
+.tx-filters{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px 22px;
+  margin-bottom:20px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.filter-label{
+  font-size:10px;
+  color:var(--muted);
+  letter-spacing:1.5px;
+}
+
+/* TABLE */
+.tx-table-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+}
+
+.tx-table-header{
+  padding:18px 22px;
+  border-bottom:1px solid var(--border);
+}
+
+.tx-header-title{
+  font-family:'Syne',sans-serif;
+  font-size:13px;
+  font-weight:700;
+}
+
+.tx-table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.tx-table thead th{
+  text-align:left;
+  padding:12px 22px;
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:2px;
+  color:var(--muted);
+  background:var(--surface2);
+  border-bottom:1px solid var(--border);
+  font-weight:600;
+}
+
+.tx-table tbody tr{
+  border-bottom:1px solid var(--border);
+  transition:background .15s;
+}
+
+.tx-table tbody tr:last-child{
+  border-bottom:none;
+}
+
+.tx-table tbody tr:hover{
+  background:var(--surface2);
+}
+
+.tx-table tbody td{
+  padding:16px 22px;
+  font-size:11px;
+}
+
+.tx-date{
+  color:var(--muted);
+  font-size:11px;
+}
+
+.tx-desc{
+  color:var(--muted);
+  font-size:11px;
+}
+
+
+.search-input{
+  flex:1;
+  height:40px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:0 14px;
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+
+.search-input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(0,229,160,0.06);
+}
+
+.search-input::placeholder{
+  color:var(--muted);
+}
