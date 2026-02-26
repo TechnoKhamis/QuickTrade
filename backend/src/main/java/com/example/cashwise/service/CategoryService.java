@@ -39,18 +39,29 @@ public class CategoryService {
     }
     
     public List<CategoryResponse> getAllCategories() {
-        return categoryRepository.findByIsDefaultTrue()
+        return categoryRepository.findAll()
             .stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
     
     public List<CategoryResponse> getCategoriesByType(CategoryType type) {
-        return categoryRepository.findByIsDefaultTrue()
+        return categoryRepository.findAll()
             .stream()
             .filter(c -> c.getType() == type)
             .map(this::mapToResponse)
             .collect(Collectors.toList());
+    }
+    
+    public CategoryResponse createCategory(String userEmail, com.example.cashwise.dto.CategoryRequest request) {
+        Category category = new Category();
+        category.setName(request.getName());
+        category.setEmoji(request.getEmoji());
+        category.setType(request.getType());
+        category.setIsDefault(false);
+        
+        category = categoryRepository.save(category);
+        return mapToResponse(category);
     }
     
     private CategoryResponse mapToResponse(Category category) {

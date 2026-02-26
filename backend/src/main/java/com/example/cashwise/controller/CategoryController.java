@@ -25,4 +25,13 @@ public class CategoryController {
     public ResponseEntity<List<CategoryResponse>> getCategoriesByType(@PathVariable CategoryType type) {
         return ResponseEntity.ok(categoryService.getCategoriesByType(type));
     }
+    
+    @PostMapping
+    public ResponseEntity<CategoryResponse> createCategory(
+            @RequestBody com.example.cashwise.dto.CategoryRequest request,
+            org.springframework.security.core.Authentication authentication) {
+        String userEmail = authentication.getName();
+        CategoryResponse response = categoryService.createCategory(userEmail, request);
+        return ResponseEntity.ok(response);
+    }
 }
